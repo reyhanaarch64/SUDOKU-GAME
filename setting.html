@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pengaturan</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  /* samain variabel sama index.html biar kompak */
+  :root { 
+    --ios-blue: #007aff; --ios-bg: #f2f2f7; --ios-card: #ffffff;
+    --ios-text: #000000; --ios-secondary: #8e8e93; --border-color: #d1d1d6;
+    --error-red: #ff3b30;
+  }
+  
+  /* style dasar */
+  body { background:var(--ios-bg); color:var(--ios-text); font-family:-apple-system,sans-serif; padding:20px; transition: background 0.3s, color 0.3s; padding-bottom: 80px; }
+  
+  /* override dark mode manual kalo user maksa dark */
+  body.dark { 
+    --ios-bg: #000; --ios-card: #1c1c1e; --ios-text: #fff; --border-color: #38383a; 
+  }
+
+  h2 { margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+  h3 { margin-top: 20px; font-size: 14px; color: var(--ios-blue); text-transform: uppercase; letter-spacing: 1px; }
+  
+  .card { background:var(--ios-card); border-radius:12px; padding:0 15px; margin-bottom:15px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .row { display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:0.5px solid var(--border-color); }
+  .row:last-child { border-bottom: none; }
+  
+  .icon-label { display: flex; align-items: center; gap: 10px; font-weight: 500; }
+  .icon-label i { width: 20px; text-align: center; color: var(--ios-text); opacity: 0.7; }
+
+  select, input[type="text"] { background:none; border:none; color:var(--ios-text); text-align:right; font-size:16px; outline: none; }
+  
+  /* toggle switch style */
+  .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+  .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+  input:checked + .slider { background-color: var(--ios-blue); }
+  input:checked + .slider:before { transform: translateX(22px); }
+
+  .btn { width:100%; padding:14px; border-radius:12px; border:none; font-weight:700; cursor: pointer; font-size: 15px; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-blue { background:var(--ios-blue); color:#fff; }
+  .btn-red { background:var(--error-red); color:#fff; }
+  .btn-back { background:var(--ios-card); color:var(--ios-text); border: 1px solid var(--border-color); position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+  #guestWarning { display:none; background: #ffebeb; color: #cc0000; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px; border: 1px solid #ffcccc; }
+</style>
+
+<script>
+  (function(){
+      const t = localStorage.getItem('selectedTheme') || 'ios';
+      const themes = {
+          pinky: { "--ios-blue": "#ff69b4", "--ios-bg": "#ffe6eb", "--ios-card": "#fff0f5", "--ios-text": "#d63384", "--border-color": "#ffb6c1" },
+          matrix: { "--ios-blue": "#008f11", "--ios-bg": "#000000", "--ios-card": "#111", "--ios-text": "#00ff41", "--border-color": "#003b00" },
+          cyberpunk: { "--ios-blue": "#fcee0a", "--ios-bg": "#050505", "--ios-card": "#2b2b2b", "--ios-text": "#00f0ff", "--border-color": "#ff003c" },
+          classic: { "--ios-blue": "#000080", "--ios-bg": "#c0c0c0", "--ios-card": "#e0e0e0", "--ios-text": "#000", "--border-color": "#999" }
+      };
+      
+      if(themes[t]) {
+          for (const [key, val] of Object.entries(themes[t])) {
+              document.documentElement.style.setProperty(key, val);
+          }
+          if(t === 'matrix') document.body.style.fontFamily = 'monospace';
+      }
+      
+      // legacy dark mode check
+      if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+  })();
+</script>
+</head>
+<body>
+
+  <h2><i class="fa-solid fa-gear"></i> Pengaturan</h2>
+  
+  <h3>Akun</h3>
+  <div id="guestWarning"><i class="fa-solid fa-triangle-exclamation"></i> Akun tamu rawan hilang!</div>
+  <div class="card">
+    <div class="row">
+      <span class="icon-label"><i class="fa-solid fa-user"></i> Nickname</span>
+      <input type="text" id="nick" placeholder="nama player">
+    </div>
+    <div class="row" onclick="toggleStats()" style="cursor:pointer">
+      <span class="icon-label"><i class="fa-solid fa-chart-simple"></i> Statistik</span>
+      <i class="fa-solid fa-chevron-right"></i>
+    </div>
+    <div id="statsBox" style="display:none; padding-bottom: 10px; border-top: 1px solid var(--border-color); margin-top: -1px;">
+        <div id="statsList" style="margin-top: 10px; font-size: 14px; opacity: 0.8;">memuat...</div>
+    </div>
+    <div class="row" id="bindRow" style="display:none; cursor:pointer" onclick="bindGoogle()">
+        <span class="icon-label" style="color:var(--ios-blue)"><i class="fa-brands fa-google"></i> Tautkan Google</span>
+        <i class="fa-solid fa-link"></i>
+    </div>
+  </div>
+
+  <h3>Permainan</h3>
+  <div class="card">
+    <div class="row">
+      <span class="icon-label"><i class="fa-solid fa-pencil"></i> Fitur Notes</span>
+      <label class="switch">
+        <input type="checkbox" id="notesToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="row">
+        <span class="icon-label"><i class="fa-solid fa-moon"></i> Mode Gelap</span>
+        <label class="switch">
+          <input type="checkbox" id="darkToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+  </div>
+
+  <h3>Tema</h3>
+  <div class="card">
+    <div class="row">
+      <span class="icon-label"><i class="fa-solid fa-palette"></i> Pilih Tema</span>
+      <select id="themeSelect" onchange="previewTheme(this.value)">
+          <option value="ios">iOS (Default)</option>
+          <option value="pinky">Pinky</option>
+          <option value="matrix">Matrix</option>
+          <option value="cyberpunk">Cyberpunk</option>
+          <option value="classic">Classic</option>
+      </select>
+    </div>
+  </div>
+
+  <h3>Lainnya</h3>
+  <div class="card">
+    <div class="row" onclick="location.href='/about.html'" style="cursor:pointer">
+        <span class="icon-label"><i class="fa-solid fa-circle-info"></i> Tentang Game</span>
+        <i class="fa-solid fa-chevron-right"></i>
+    </div>
+  </div>
+
+  <div class="btn-group">
+    <button class="btn btn-blue" onclick="save()"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+    <button class="btn btn-red" id="logoutBtn" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
+  </div>
+  
+  <button class="btn btn-back" onclick="location.href='/'">Kembali</button>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, linkWithPopup, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getDatabase, ref, get, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  
+  const firebaseConfig = {
+    apiKey: "masukin_api_key_lu_disini",
+    authDomain: "masukin_auth_domain_disini",
+    databaseURL: "masukin_database_url_disini",
+    projectId: "masukin_project_id_disini",
+    storageBucket: "masukin_storage_bucket_disini",
+    messagingSenderId: "masukin_messaging_sender_id_disini",
+    appId: "masukin_app_id_disini"
+};
+
+  
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+
+  // logic preview tema tanpa reload
+  window.previewTheme = (name) => {
+      const themes = {
+          ios: { "--ios-blue": "#007aff", "--ios-bg": "#f2f2f7", "--ios-card": "#ffffff", "--ios-text": "#000000", "--border-color": "#d1d1d6" },
+          pinky: { "--ios-blue": "#ff69b4", "--ios-bg": "#ffe6eb", "--ios-card": "#fff0f5", "--ios-text": "#d63384", "--border-color": "#ffb6c1" },
+          matrix: { "--ios-blue": "#008f11", "--ios-bg": "#000000", "--ios-card": "#111", "--ios-text": "#00ff41", "--border-color": "#003b00" },
+          cyberpunk: { "--ios-blue": "#fcee0a", "--ios-bg": "#050505", "--ios-card": "#2b2b2b", "--ios-text": "#00f0ff", "--border-color": "#ff003c" },
+          classic: { "--ios-blue": "#000080", "--ios-bg": "#c0c0c0", "--ios-card": "#e0e0e0", "--ios-text": "#000", "--border-color": "#999" }
+      };
+      const t = themes[name] || themes.ios;
+      for (const [key, val] of Object.entries(t)) {
+          document.documentElement.style.setProperty(key, val);
+      }
+      document.body.style.fontFamily = (name === 'matrix') ? 'monospace' : '-apple-system,sans-serif';
+  };
+
+  // Load Prefs ke UI
+  const savedTheme = localStorage.getItem('selectedTheme') || 'ios';
+  document.getElementById('themeSelect').value = savedTheme;
+  
+  const notesToggle = document.getElementById('notesToggle');
+  notesToggle.checked = localStorage.getItem('showNotes') !== 'false';
+  
+  const darkToggle = document.getElementById('darkToggle');
+  darkToggle.checked = localStorage.getItem('theme') === 'dark';
+  
+  darkToggle.onchange = (e) => {
+      const mode = e.target.checked ? 'dark' : 'light';
+      // jangan simpan ke localstorage dulu biar tombol simpan ada gunanya,
+      // tapi preview aja
+      document.body.classList.toggle('dark', e.target.checked);
+  };
+
+  let currentUser = null;
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) return location.href = "/"; 
+    currentUser = user;
+    
+    try {
+      const snap = await get(ref(db, `users/${user.uid}`));
+      const data = snap.val() || {};
+      document.getElementById('nick').value = data.nickname || "player";
+      
+      if (user.isAnonymous) {
+          document.getElementById('bindRow').style.display = 'flex';
+          document.getElementById('guestWarning').style.display = 'block';
+          document.getElementById('logoutBtn').innerHTML = '<i class="fa-solid fa-trash"></i> Hapus Akun';
+      }
+
+      window.toggleStats = async () => {
+          const box = document.getElementById('statsBox');
+          if(box.style.display === 'none') {
+              box.style.display = 'block';
+              const diffs = ['easy', 'hard', 'extreme', 'god'];
+              const list = document.getElementById('statsList');
+              list.innerHTML = 'memuat data...';
+              
+              let html = '';
+              for (const d of diffs) {
+                const sSnap = await get(ref(db, `scores/${d}/${user.uid}`));
+                let time = "-";
+                if(sSnap.exists()) {
+                    const s = sSnap.val().duration;
+                    time = `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
+                }
+                html += `<div style="display:flex; justify-content:space-between; padding:4px 0;">
+                    <span style="text-transform:capitalize">${d}</span> <strong>${time}</strong>
+                </div>`;
+              }
+              list.innerHTML = html;
+          } else {
+              box.style.display = 'none';
+          }
+      };
+
+    } catch (e) { console.error(e); }
+  });
+
+  window.save = async () => {
+    const newNick = document.getElementById('nick').value.trim();
+    const themeVal = document.getElementById('themeSelect').value;
+    const noteVal = document.getElementById('notesToggle').checked;
+    const darkVal = document.getElementById('darkToggle').checked ? 'dark' : 'light';
+
+    // Simpan Local Prefs
+    localStorage.setItem('selectedTheme', themeVal);
+    localStorage.setItem('showNotes', noteVal);
+    localStorage.setItem('theme', darkVal);
+
+    if (!currentUser) return;
+    
+    const btn = document.querySelector('button[onclick="save()"]');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+    
+    try {
+        if(newNick) {
+            const updates = {};
+            updates[`users/${currentUser.uid}/nickname`] = newNick;
+            const diffs = ['easy', 'hard', 'extreme', 'god'];
+            await Promise.all(diffs.map(async (d) => {
+                const sp = `scores/${d}/${currentUser.uid}`;
+                const ss = await get(ref(db, sp));
+                if(ss.exists()) updates[`${sp}/nickname`] = newNick;
+            }));
+            await update(ref(db), updates);
+        }
+        alert('Pengaturan tersimpan!');
+        location.reload(); 
+    } catch(e) {
+        alert('Error: '+e.message);
+    } finally {
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan';
+    }
+  };
+
+  window.handleLogout = async () => {
+      if(!currentUser) return;
+      if(currentUser.isAnonymous) {
+          if(confirm("Hapus akun tamu permanen?")) {
+              await remove(ref(db, `users/${currentUser.uid}`));
+              await deleteUser(currentUser);
+              location.href = "/";
+          }
+      } else {
+          if(confirm("Yakin mau logout?")) {
+              await signOut(auth);
+              location.href = "/";
+          }
+      }
+  };
+
+  window.bindGoogle = async () => {
+      try {
+        const p = new GoogleAuthProvider();
+        await linkWithPopup(auth.currentUser, p);
+        alert("Berhasil tautkan akun!");
+        location.reload();
+      } catch(e) { alert("Gagal: " + e.message); }
+  };
+</script>
+</body>
+</html>

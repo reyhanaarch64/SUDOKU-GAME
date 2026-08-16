@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>papan peringkat</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  :root {
+    --ios-blue: #007aff; --ios-bg: #f2f2f7; --ios-card: #ffffff;
+    --ios-text: #000000; --ios-secondary: #8e8e93; --border-color: #d1d1d6;
+  }
+  body.dark { --ios-bg: #000; --ios-card: #1c1c1e; --ios-text: #fff; --border-color: #38383a; }
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+  body { background-color: var(--ios-bg); color: var(--ios-text); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; transition: 0.3s; }
+  h1 { margin: 20px 0; font-size: 24px; }
+  
+  .lb-container { width: 100%; max-width: 400px; background: var(--ios-card); border-radius: 20px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  
+  .tabs { display: flex; background: var(--ios-bg); padding: 4px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color); }
+  .tab { flex: 1; text-align: center; padding: 8px; font-size: 13px; font-weight: 500; color: var(--ios-secondary); border-radius: 8px; cursor: pointer; transition: 0.2s; }
+  .tab.active { background: var(--ios-card); color: var(--ios-text); box-shadow: 0 2px 4px rgba(0,0,0,0.1); font-weight: 600; }
+  
+  .list-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-color); font-size: 15px; }
+  .list-item:last-child { border-bottom: none; }
+  .rank { font-weight: bold; width: 30px; display: inline-block; }
+  
+  .nav-btn { margin-top: 20px; color: var(--ios-blue); text-decoration: none; font-weight: 500; padding: 10px 20px; background: var(--ios-card); border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+</style>
+</head>
+<body>
+
+<h1><i class="fa-solid fa-trophy" style="color:var(--ios-blue)"></i> Papan Peringkat</h1>
+
+<div class="lb-container">
+  <div class="tabs">
+    <div class="tab active" data-diff="easy">Easy</div>
+    <div class="tab" data-diff="hard">Hard</div>
+    <div class="tab" data-diff="extreme">Extreme</div>
+    <div class="tab" data-diff="god">God</div>
+  </div>
+
+  <div id="lb-list">
+    <div style="text-align:center; padding:20px; opacity:0.6"><i class="fa-solid fa-spinner fa-spin"></i> memuat data...</div>
+  </div>
+</div>
+
+<a href="/" class="nav-btn">Kembali ke Menu</a>
+
+<script>
+  (function(){
+      // Kita cek dulu body udah ada belum (sebenernya disini pasti udah ada, tapi jaga2)
+      if(!document.body) return;
+
+      const t = localStorage.getItem('selectedTheme') || 'ios';
+      const themes = {
+          pinky: { "--ios-blue": "#ff69b4", "--ios-bg": "#ffe6eb", "--ios-card": "#fff0f5", "--ios-text": "#d63384", "--border-color": "#ffb6c1" },
+          matrix: { "--ios-blue": "#008f11", "--ios-bg": "#000000", "--ios-card": "#111", "--ios-text": "#00ff41", "--border-color": "#003b00" },
+          cyberpunk: { "--ios-blue": "#fcee0a", "--ios-bg": "#050505", "--ios-card": "#2b2b2b", "--ios-text": "#00f0ff", "--border-color": "#ff003c" },
+          classic: { "--ios-blue": "#000080", "--ios-bg": "#c0c0c0", "--ios-card": "#e0e0e0", "--ios-text": "#000", "--border-color": "#999" }
+      };
+      
+      if(themes[t]) {
+          for (const [key, val] of Object.entries(themes[t])) {
+              document.documentElement.style.setProperty(key, val);
+          }
+          if(t === 'matrix') document.body.style.fontFamily = 'monospace';
+      }
+      if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+  })();
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getDatabase, ref, get, query, orderByChild, limitToFirst } 
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "masukin_api_key_lu_disini",
+    authDomain: "masukin_auth_domain_disini",
+    databaseURL: "masukin_database_url_disini",
+    projectId: "masukin_project_id_disini",
+    storageBucket: "masukin_storage_bucket_disini",
+    messagingSenderId: "masukin_messaging_sender_id_disini",
+    appId: "masukin_app_id_disini"
+};
+
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  async function loadLeaderboard(diff) {
+    const list = document.getElementById('lb-list');
+    list.innerHTML = '<div style="text-align:center; padding:20px; opacity:0.6"><i class="fa-solid fa-spinner fa-spin"></i> memuat...</div>';
+
+    try {
+      const q = query(ref(db, `scores/${diff}`), orderByChild('duration'), limitToFirst(50));
+      const snap = await get(q);
+
+      if (snap.exists()) {
+        const rawData = [];
+        snap.forEach(child => { rawData.push(child.val()); });
+        
+        list.innerHTML = '';
+        rawData.forEach((d, i) => {
+          let colorStyle = "";
+          let icon = "";
+          
+          if (i === 0) { colorStyle = "color:#ff3b30; font-weight:800;"; icon="<i class='fa-solid fa-crown'></i> "; }
+          else if (i === 1) { colorStyle = "color:#007aff; font-weight:800;"; icon="<i class='fa-solid fa-medal'></i> "; }
+          else if (i === 2) { colorStyle = "color:#ffcc00; font-weight:800;"; icon="<i class='fa-solid fa-medal'></i> "; }
+          else { icon = `<span class="rank">#${i+1}</span> `; }
+          
+          const m = Math.floor(d.duration / 60);
+          const s = (d.duration % 60).toString().padStart(2, '0');
+          const timeDisplay = `${m}:${s}`;
+          
+          const name = d.nickname || "player";
+
+          list.innerHTML += `<div class="list-item" style="${colorStyle}">
+            <span>${icon} ${name}</span>
+            <span>${timeDisplay}</span>
+          </div>`;
+        });
+      } else {
+        list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--ios-secondary)">belum ada yang main mode ini.</div>';
+      }
+    } catch (err) {
+      console.error(err);
+      list.innerHTML = 'gagal memuat. cek koneksi.';
+    }
+  }
+
+  document.querySelectorAll('.tab').forEach(t => {
+    t.onclick = () => {
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+      t.classList.add('active');
+      loadLeaderboard(t.dataset.diff);
+    };
+  });
+
+  // load awal
+  loadLeaderboard('easy');
+
+</script>
+</body>
+</html>
